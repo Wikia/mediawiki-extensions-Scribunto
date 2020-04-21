@@ -1,5 +1,6 @@
 <?php
 
+use Fandom\GlobalLuaModules\GlobalLuaModuleService;
 use MediaWiki\MediaWikiServices;
 use Wikimedia\ScopedCallback;
 
@@ -565,12 +566,23 @@ abstract class Scribunto_LuaEngine extends ScribuntoEngineBase {
 			return [ $init ];
 		}
 
-		$title = Title::newFromText( $name );
-		if ( !$title || !$title->hasContentModel( CONTENT_MODEL_SCRIBUNTO ) ) {
-			return [];
-		}
+		// Fandom change begin - add support for global Lua modules loaded from a central wiki (IW-3384)
+		if ( class_exists( GlobalLuaModuleService::class ) && GlobalLuaModuleService::isGlobalLuaModule( $name ) ) {
+			$module =
+				MediaWikiServices::getInstance()
+					->getService( GlobalLuaModuleService::class )
+					->getGlobalModule( $this, $name );
+		} else {
+			// local module - fallback to default behavior
+			$title = Title::newFromText( $name );
+			if ( !$title || !$title->hasContentModel( CONTENT_MODEL_SCRIBUNTO ) ) {
+				return [];
+			}
 
-		$module = $this->fetchModuleFromParser( $title );
+			$module = $this->fetchModuleFromParser( $title );
+		}
+		// end Fandom change
+
 		if ( $module ) {
 			// @phan-suppress-next-line PhanUndeclaredMethod
 			return [ $module->getInitChunk() ];
