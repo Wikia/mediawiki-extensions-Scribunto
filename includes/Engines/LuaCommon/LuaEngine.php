@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Scribunto\Engines\LuaCommon;
 
 use Exception;
+use Fandom\GlobalLuaModules\GlobalLuaModuleService;
 use MediaWiki\Extension\Scribunto\Engines\LuaSandbox\LuaSandboxInterpreter;
 use MediaWiki\Extension\Scribunto\Scribunto;
 use MediaWiki\Extension\Scribunto\ScribuntoContent;
@@ -583,12 +584,23 @@ abstract class LuaEngine extends ScribuntoEngineBase {
 			return [ $init ];
 		}
 
-		$title = Title::newFromText( $name );
-		if ( !$title || !$title->hasContentModel( CONTENT_MODEL_SCRIBUNTO ) ) {
-			return [];
-		}
+		// Fandom change begin - add support for global Lua modules loaded from a central wiki (IW-3384)
+		if ( class_exists( GlobalLuaModuleService::class ) && GlobalLuaModuleService::isGlobalLuaModule( $name ) ) {
+			$module =
+				MediaWikiServices::getInstance()
+					->getService( GlobalLuaModuleService::class )
+					->getGlobalModule( $this, $name );
+		} else {
+			// local module - fallback to default behavior
+			$title = Title::newFromText( $name );
+			if ( !$title || !$title->hasContentModel( CONTENT_MODEL_SCRIBUNTO ) ) {
+				return [];
+			}
 
-		$module = $this->fetchModuleFromParser( $title );
+			$module = $this->fetchModuleFromParser( $title );
+		}
+		// end Fandom change
+
 		if ( $module ) {
 			// @phan-suppress-next-line PhanUndeclaredMethod
 			return [ $module->getInitChunk() ];
