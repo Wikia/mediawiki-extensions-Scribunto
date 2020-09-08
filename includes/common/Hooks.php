@@ -23,6 +23,7 @@
 use MediaWiki\MediaWikiServices;
 use UtfNormal\Validator;
 use Wikimedia\PSquare;
+use Fandom\GlobalLuaModules\GlobalLuaModuleService;
 
 /**
  * Hooks for the Scribunto extension.
@@ -107,7 +108,15 @@ class ScribuntoHooks {
 				throw new ScribuntoException( 'scribunto-common-nosuchmodule',
 					[ 'args' => [ $moduleName ] ] );
 			}
-			$module = $engine->fetchModuleFromParser( $title );
+
+			if ( class_exists( GlobalLuaModuleService::class ) && GlobalLuaModuleService::isGlobalLuaModule( $moduleName ) ) {
+				$module = MediaWikiServices::getInstance()
+					->getService( GlobalLuaModuleService::class )
+					->getGlobalModule( $engine, $moduleName );
+			} else {
+				$module = $engine->fetchModuleFromParser( $title );
+			}
+
 			if ( !$module ) {
 				throw new ScribuntoException( 'scribunto-common-nosuchmodule',
 					[ 'args' => [ $moduleName ] ] );
