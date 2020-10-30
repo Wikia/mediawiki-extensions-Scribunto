@@ -1077,8 +1077,8 @@ class Scribunto_LuaError extends ScribuntoException {
 				->rawParams( "<strong>$src</strong>" )
 				->params( $function );
 			in_array( 'content', $msgOptions ) ?
-				$backtraceLine = $backtraceLineMsg->inContentLanguage()->parse() :
-				$backtraceLine = $backtraceLineMsg->parse();
+				$backtraceLine = $backtraceLineMsg->inContentLanguage()->plain() :
+				$backtraceLine = $backtraceLineMsg->plain();
 
 			$s .= "<li>$backtraceLine</li>";
 		}
